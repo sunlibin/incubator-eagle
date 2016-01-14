@@ -20,11 +20,22 @@ package org.apache.eagle.jobrunning.url;
 import org.apache.eagle.jobrunning.common.JobConstants;
 
 public class JobCompletedConfigServiceURLBuilderImpl implements ServiceURLBuilder {
+
+	private String historyBaseUrl;
+	private String jobID;
+
+	public JobCompletedConfigServiceURLBuilderImpl HistoryBaseUrl(String historyBaseUrl) {
+		this.historyBaseUrl = historyBaseUrl;
+		return this;
+	}
+
+	public JobCompletedConfigServiceURLBuilderImpl JobID(String jobID) {
+		this.jobID = jobID;
+		return this;
+	}
 	
-	public String build(String ... parameters) {
-		// parameters[0] = baseUrl, parameters[1] = jobID
+	public String build() {
 		// {historyUrl}/jobhistory/conf/job_xxxxxxxxxxxxx_xxxxxx		
-		return parameters[0] + "jobhistory/conf/" + parameters[1]
-				+ "?" + JobConstants.ANONYMOUS_PARAMETER;
+		return historyBaseUrl + "jobhistory/conf/" + jobID + "?" + JobConstants.ANONYMOUS_PARAMETER;
 	}
 }

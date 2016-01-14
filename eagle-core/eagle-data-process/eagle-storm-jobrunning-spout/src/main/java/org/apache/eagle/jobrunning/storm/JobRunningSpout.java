@@ -148,8 +148,8 @@ public class JobRunningSpout extends BaseRichSpout {
 		JobConstants.ResourceType type = messageId.type;
 		LOG.info("Ack on messageId: " + messageId.toString());
 		switch(type) {
-			case JOB_CONFIGURATION:
-			case JOB_COMPLETE_INFO:
+			case MR_JOB_CONFIGURATION:
+			case MR_JOB_COMPLETE_INFO:
 				/** lock this for making processed/processing job list unchanged during crawler calculating last round running job list **/
 				try {
 					readWriteLock.readLock().lock();
@@ -175,7 +175,7 @@ public class JobRunningSpout extends BaseRichSpout {
 		RunningJobMessageId messageId = (RunningJobMessageId) msgId;
 		JobConstants.ResourceType type = messageId.type;
 		// Here timestamp is meaningless, set to null
-		if (type.equals(JobConstants.ResourceType.JOB_COMPLETE_INFO) || type.equals(JobConstants.ResourceType.JOB_CONFIGURATION)) {
+		if (type.equals(JobConstants.ResourceType.MR_JOB_COMPLETE_INFO) || type.equals(JobConstants.ResourceType.MR_JOB_CONFIGURATION)) {
 			try {
 				readWriteLock.readLock().lock();
 				// Here username in not used, set to null

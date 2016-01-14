@@ -19,11 +19,22 @@ package org.apache.eagle.jobrunning.url;
 import org.apache.eagle.jobrunning.common.JobConstants;
 
 public class JobStatusServiceURLBuilderImpl implements ServiceURLBuilder {
-		
-	public String build(String ... parameters) {
-		// parameters[0] = rmUrl, parameters[1] = appID
+
+	private String rmBaseUrl;
+	private String appID;
+
+	public JobStatusServiceURLBuilderImpl RMBaseUrl(String rmBaseUrl) {
+		this.rmBaseUrl = rmBaseUrl;
+		return this;
+	}
+
+	public JobStatusServiceURLBuilderImpl AppID(String appID) {
+		this.appID = appID;
+		return this;
+	}
+
+	public String build() {
 		// {rmUrl}/ws/v1/cluster/apps/application_xxxxxxxxxxxxx_xxxxx?anonymous=true
-		return parameters[0] + "ws/v1/cluster/apps/" + parameters[1] 
-							 + "?" + JobConstants.ANONYMOUS_PARAMETER;
+		return rmBaseUrl + "ws/v1/cluster/apps/" + appID + "?" + JobConstants.ANONYMOUS_PARAMETER;
 	}
 }

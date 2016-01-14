@@ -42,14 +42,14 @@ public class ConfigWorkTask implements Runnable {
 	}
 	
 	public void run() {
-		runConfigCrawlerWorkhread(context);
+		runConfigCrawlerWorkThread(context);
 	}
 
-	private void runConfigCrawlerWorkhread(JobContext context) {
+	private void runConfigCrawlerWorkThread(JobContext context) {
 		LOG.info("Going to fetch job configuration information, jobId:" + context.jobId);
 		try {
-			List<Object> objs = fetcher.getResource(ResourceType.JOB_CONFIGURATION, JobUtils.getAppIDByJobID(context.jobId));
-			callback.onJobRunningInformation(context, ResourceType.JOB_CONFIGURATION, objs);
+			List<Object> objs = fetcher.getResource(ResourceType.MR_JOB_CONFIGURATION.name(), JobUtils.getAppIDByJobID(context.jobId));
+			callback.onJobRunningInformation(context, ResourceType.MR_JOB_CONFIGURATION, objs);
 		}
 		catch (Exception ex) {
 	        if (ex.getMessage().contains("Server returned HTTP response code: 500")) {
@@ -59,7 +59,7 @@ public class ConfigWorkTask implements Runnable {
 	        }
 	        else {
 	        	LOG.warn("Got an exception when fetching job config: ", ex);
-	        	crawler.removeFromProcessingList(ResourceType.JOB_CONFIGURATION, context);
+	        	crawler.removeFromProcessingList(ResourceType.MR_JOB_CONFIGURATION, context);
 	        }
 		}
 	}

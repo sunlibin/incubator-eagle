@@ -20,14 +20,23 @@ import org.apache.eagle.jobrunning.common.JobConstants;
 import org.apache.eagle.jobrunning.util.JobUtils;
 
 public class JobCountersServiceURLBuilderImpl implements ServiceURLBuilder {
-	
-	public String build(String ... parameters) {
-		// parameter[0] = baseUrl, parameter[1] = appID;
-		// {rmUrl}/proxy/application_xxxxxxxxxxxxx_xxxxxx/ws/v1/mapreduce/jobs/job_xxxxxxxxxxxxx_xxxxxx/counters?anonymous=true"
-		return parameters[0] + JobConstants.V2_PROXY_PREFIX_URL +
-			   parameters[1] + JobConstants.V2_MR_APPMASTER_PREFIX +
-			   JobUtils.getJobIDByAppID(parameters[1]) + JobConstants.V2_MR_COUNTERS_URL +
-			   "?" + JobConstants.ANONYMOUS_PARAMETER;
+
+	private String rmBaseUrl;
+	private String appID;
+
+	public JobCountersServiceURLBuilderImpl RMBaseUrl(String rmBaseUrl) {
+		this.rmBaseUrl = rmBaseUrl;
+		return this;
+	}
+
+	public JobCountersServiceURLBuilderImpl AppID(String appID) {
+		this.appID = appID;
+		return this;
 	}
 	
+	public String build() {
+		// {rmUrl}/proxy/application_xxxxxxxxxxxxx_xxxxxx/ws/v1/mapreduce/jobs/job_xxxxxxxxxxxxx_xxxxxx/counters?anonymous=true
+		return rmBaseUrl + JobConstants.V2_PROXY_PREFIX_URL + appID + JobConstants.V2_MR_APPMASTER_PREFIX +
+			   JobUtils.getJobIDByAppID(appID) + JobConstants.V2_MR_COUNTERS_URL + "?" + JobConstants.ANONYMOUS_PARAMETER;
+	}
 }

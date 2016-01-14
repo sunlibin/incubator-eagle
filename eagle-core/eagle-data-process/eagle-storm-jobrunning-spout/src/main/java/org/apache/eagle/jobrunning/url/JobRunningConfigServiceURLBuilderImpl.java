@@ -20,13 +20,25 @@ import org.apache.eagle.jobrunning.common.JobConstants;
 import org.apache.eagle.jobrunning.util.JobUtils;
 
 public class JobRunningConfigServiceURLBuilderImpl implements ServiceURLBuilder {
-	
-	public String build(String ... parameters) {
-		// parameters[0] = baseUrl, parameters[1] = jobID
+
+	private String rmBaseUrl;
+	private String jobID;
+
+	public JobRunningConfigServiceURLBuilderImpl RMBaseUrl(String rmBaseUrl) {
+		this.rmBaseUrl = rmBaseUrl;
+		return this;
+	}
+
+	public JobRunningConfigServiceURLBuilderImpl JobID(String jobID) {
+		this.jobID = jobID;
+		return this;
+	}
+
+	public String build() {
 		// {baseUrl}/proxy/application_xxxxxxxxxxxxx_xxxxx/ws/v1/mapreduce/jobs/job_xxxxxxxxxxxxx_xxxxx/conf
-		String urlString = parameters[0] + JobConstants.V2_PROXY_PREFIX_URL
-				+ JobUtils.getAppIDByJobID(parameters[1]) + JobConstants.V2_MR_APPMASTER_PREFIX
-				+ parameters[1] + JobConstants.V2_CONF_URL 
+		String urlString = rmBaseUrl + JobConstants.V2_PROXY_PREFIX_URL
+				+ JobUtils.getAppIDByJobID(jobID) + JobConstants.V2_MR_APPMASTER_PREFIX
+				+ jobID + JobConstants.V2_CONF_URL
 				+ "?" + JobConstants.ANONYMOUS_PARAMETER;
 		return urlString;		
 	}

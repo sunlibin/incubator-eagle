@@ -20,28 +20,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.apache.eagle.jobrunning.url.ServiceURLBuilder;
+import org.apache.eagle.jobrunning.url.JobListServiceURLBuilderImpl;
 import org.apache.eagle.jobrunning.util.InputStreamUtils;
 import org.apache.eagle.jobrunning.common.JobConstants;
 import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HAURLSelectorImpl implements HAURLSelector {
+public class ResourceManagerHAURLSelectorImpl implements HAURLSelector {
 
 	private final String[] urls;
 	private volatile String selectedUrl;
-	private final ServiceURLBuilder builder;
-	
+
 	private volatile boolean reselectInProgress;
 	private final JobConstants.CompressionType compressionType;
 	private static final long MAX_RETRY_TIME = 3;
-	private static final Logger LOG = LoggerFactory.getLogger(HAURLSelectorImpl.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ResourceManagerHAURLSelectorImpl.class);
 	
-	public HAURLSelectorImpl(String[] urls, ServiceURLBuilder builder, JobConstants.CompressionType compressionType) {
+	public ResourceManagerHAURLSelectorImpl(String[] urls, JobConstants.CompressionType compressionType) {
 		this.urls = urls;
 		this.compressionType = compressionType;
-		this.builder = builder;
 	}
 	
 	public boolean checkUrl(String urlString) {
@@ -79,7 +77,11 @@ public class HAURLSelectorImpl implements HAURLSelector {
 					String urlToCheck = urls[i];
 					LOG.info("Going to try url :" + urlToCheck);
 					for (int time = 0; time < MAX_RETRY_TIME; time++) {
-						if (checkUrl(builder.build(urlToCheck, JobConstants.JobState.RUNNING.name()))) {
+						JobListServiceURLBuilderImpl jobListServiceURLBuilder = new JobListServiceURLBuilderImpl();
+						String url = jobListServiceURLBuilder.RMBaseUrl(urlToCheck)
+								.JobState(JobConstants.JobState.RUNNING.name())
+								.build();
+						if (checkUrl(url)) {
 							selectedUrl = urls[i];
 							LOG.info("Successfully switch to new url : " + selectedUrl);
 							return;

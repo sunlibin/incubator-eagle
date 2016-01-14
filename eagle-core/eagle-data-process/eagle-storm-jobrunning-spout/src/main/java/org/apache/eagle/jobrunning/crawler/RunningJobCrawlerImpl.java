@@ -126,8 +126,8 @@ public class RunningJobCrawlerImpl implements RunningJobCrawler{
 		zkCleanupThread.setDaemon(true);
 		
 		this.zkStateManager = zkStateManager;
-		this.processingJobMap.put(ResourceType.JOB_CONFIGURATION, new ConcurrentHashMap<String, JobContext>());
-		this.processingJobMap.put(ResourceType.JOB_COMPLETE_INFO, new ConcurrentHashMap<String, JobContext>());
+		this.processingJobMap.put(ResourceType.MR_JOB_CONFIGURATION, new ConcurrentHashMap<String, JobContext>());
+		this.processingJobMap.put(ResourceType.MR_JOB_COMPLETE_INFO, new ConcurrentHashMap<String, JobContext>());
 		this.queueOfConfig = new ArrayBlockingQueue<JobContext>(controlConfig.sizeOfJobConfigQueue);
 		this.queueOfCompleteJobInfo = new ArrayBlockingQueue<JobContext>(controlConfig.sizeOfJobCompletedInfoQueue);
 	}
@@ -187,8 +187,8 @@ public class RunningJobCrawlerImpl implements RunningJobCrawler{
 				}
 			}
 			try {
-				List<Object> objs = fetcher.getResource(ResourceType.JOB_COMPLETE_INFO, JobUtils.getAppIDByJobID(context.jobId));
-				callback.onJobRunningInformation(context, ResourceType.JOB_COMPLETE_INFO, objs);
+				List<Object> objs = fetcher.getResource(ResourceType.MR_JOB_COMPLETE_INFO.name(), JobUtils.getAppIDByJobID(context.jobId));
+				callback.onJobRunningInformation(context, ResourceType.MR_JOB_COMPLETE_INFO, objs);
 			}
 			catch(Exception ex) {
 		        if (ex.getMessage().contains("Server returned HTTP response code: 500")) {
@@ -205,7 +205,7 @@ public class RunningJobCrawlerImpl implements RunningJobCrawler{
 		while(true) {
 			List<Object> list;
 			try {
-				list = fetcher.getResource(ResourceType.JOB_LIST, JobState.COMPLETED.name());
+				list = fetcher.getResource(ResourceType.MR_JOB_LIST.name(), JobState.COMPLETED.name());
 				if (list == null) {
 					LOG.warn("Current Completed Job List is Empty");
 					continue;
@@ -225,11 +225,11 @@ public class RunningJobCrawlerImpl implements RunningJobCrawler{
 				}
 				
 				if (controlConfig.jobConfigEnabled) {
-					addIntoProcessingQueueAndList(completedJobSet, queueOfConfig, ResourceType.JOB_CONFIGURATION);
+					addIntoProcessingQueueAndList(completedJobSet, queueOfConfig, ResourceType.MR_JOB_CONFIGURATION);
 				}
 
 				if (controlConfig.jobInfoEnabled) {
-					addIntoProcessingQueueAndList(completedJobSet, queueOfCompleteJobInfo, ResourceType.JOB_COMPLETE_INFO);
+					addIntoProcessingQueueAndList(completedJobSet, queueOfCompleteJobInfo, ResourceType.MR_JOB_COMPLETE_INFO);
 				}
 				Thread.sleep(20 * 1000);
 			} catch (Throwable t) {
@@ -244,8 +244,8 @@ public class RunningJobCrawlerImpl implements RunningJobCrawler{
 			try {
 				long thresholdTime = System.currentTimeMillis() - controlConfig.zkCleanupTimeInday * DateUtils.MILLIS_PER_DAY; 
 				String date = DateTimeUtil.format(thresholdTime, "yyyyMMdd");
-				zkStateManager.truncateJobBefore(ResourceType.JOB_CONFIGURATION, date);
-				zkStateManager.truncateJobBefore(ResourceType.JOB_COMPLETE_INFO, date);
+				zkStateManager.truncateJobBefore(ResourceType.MR_JOB_CONFIGURATION, date);
+				zkStateManager.truncateJobBefore(ResourceType.MR_JOB_COMPLETE_INFO, date);
 				Thread.sleep(30 * 60 * 1000);
 			}
 			catch (Throwable t) {
@@ -298,7 +298,7 @@ public class RunningJobCrawlerImpl implements RunningJobCrawler{
 			zkCleanupThread.start();
 		}
 		
-		List<Object> list = fetcher.getResource(ResourceType.JOB_LIST, JobState.RUNNING.name());		
+		List<Object> list = fetcher.getResource(ResourceType.MR_JOB_LIST.name(), JobState.RUNNING.name());
 		if (list == null) {
 			LOG.warn("Current Running Job List is Empty");
 			return;
@@ -318,15 +318,15 @@ public class RunningJobCrawlerImpl implements RunningJobCrawler{
 		}
 		
 		if (controlConfig.jobConfigEnabled) {
-			addIntoProcessingQueueAndList(currentRunningJobSet, queueOfConfig, ResourceType.JOB_CONFIGURATION);
+			addIntoProcessingQueueAndList(currentRunningJobSet, queueOfConfig, ResourceType.MR_JOB_CONFIGURATION);
 		}
 		
 		if (controlConfig.jobInfoEnabled) {			
 			// fetch job detail & jobcounters	
 			for (JobContext context : currentRunningJobSet) {
 				try {
-					List<Object> objs = fetcher.getResource(ResourceType.JOB_RUNNING_INFO, JobUtils.getAppIDByJobID(context.jobId));
-					callback.onJobRunningInformation(context, ResourceType.JOB_RUNNING_INFO, objs);
+					List<Object> objs = fetcher.getResource(ResourceType.MR_JOB_RUNNING_INFO.name(), JobUtils.getAppIDByJobID(context.jobId));
+					callback.onJobRunningInformation(context, ResourceType.MR_JOB_RUNNING_INFO, objs);
 				}
 				catch (Exception ex) {
 			        if (ex.getMessage().contains("Server returned HTTP response code: 500")) {

@@ -30,21 +30,20 @@ public class JobConstants {
 	public static final String V2_CONF_URL = "/conf";
 	public static final String V2_COMPLETE_APPS_URL = "ws/v1/cluster/apps/";
 	public static final String V2_MR_COUNTERS_URL = "/counters";
-	
 
 	public static final String HIVE_QUERY_STRING = "hive.query.string";
 	public static final String JOB_STATE_RUNNING = "RUNNING";
 	
 	public enum YarnApplicationType {
-		MAPREDUCE, UNKNOWN
+		MAPREDUCE, SPARK, UNKNOWN
 	}
 	
 	public enum CompressionType {
 		GZIP, NONE
 	}
-	
+
 	public enum ResourceType {
-		JOB_RUNNING_INFO, JOB_COMPLETE_INFO, JOB_CONFIGURATION, JOB_LIST
+		MR_JOB_RUNNING_INFO, MR_JOB_COMPLETE_INFO, MR_JOB_CONFIGURATION, MR_JOB_LIST
 	}
 	
 	public enum JobState {

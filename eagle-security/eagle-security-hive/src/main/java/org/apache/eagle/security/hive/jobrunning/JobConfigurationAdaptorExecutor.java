@@ -58,7 +58,7 @@ public class JobConfigurationAdaptorExecutor extends JavaStormStreamExecutor2<St
 		String user = (String)input.get(0);
         String jobId = (String)input.get(1);
         ResourceType type = (ResourceType)input.get(2);
-        if (type.equals(ResourceType.JOB_CONFIGURATION)) {
+        if (type.equals(ResourceType.MR_JOB_CONFIGURATION)) {
             Map<String, String> configs = (Map<String, String>)input.get(3);
             if (filter.acceptJobConf(configs)) {
                 if(LOG.isDebugEnabled()) {

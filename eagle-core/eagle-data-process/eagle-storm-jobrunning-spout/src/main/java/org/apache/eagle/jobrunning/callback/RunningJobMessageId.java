@@ -22,7 +22,7 @@ import org.apache.eagle.jobrunning.common.JobConstants;
 public class RunningJobMessageId {
 	public String jobID;
 	public JobConstants.ResourceType type;
-	// If type = JOB_RUNNING_INFO, timestamp = fetchedTime, otherwise timestamp is meaningless, set to null
+	// If type = MR_JOB_RUNNING_INFO, timestamp = fetchedTime, otherwise timestamp is meaningless, set to null
 	public Long timestamp;
 	
 	public RunningJobMessageId(String jobID, JobConstants.ResourceType type, Long timestamp) {

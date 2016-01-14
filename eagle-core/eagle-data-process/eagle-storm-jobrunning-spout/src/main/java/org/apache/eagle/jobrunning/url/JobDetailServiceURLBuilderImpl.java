@@ -19,10 +19,22 @@ package org.apache.eagle.jobrunning.url;
 import org.apache.eagle.jobrunning.common.JobConstants;
 
 public class JobDetailServiceURLBuilderImpl implements ServiceURLBuilder {
+
+	private String rmBaseUrl;
+	private String appID;
+
+	public JobDetailServiceURLBuilderImpl RMBaseUrl(String rmBaseUrl) {
+		this.rmBaseUrl = rmBaseUrl;
+		return this;
+	}
+
+	public JobDetailServiceURLBuilderImpl AppID(String appID) {
+		this.appID = appID;
+		return this;
+	}
 	
-	public String build(String... parameters) {
-		// parameter[0] = baseUrl , parameter[1] = appID
+	public String build() {
 		// {rmUrl}/proxy/application_xxx/ws/v1/mapreduce/jobs?anonymous=true
-		return parameters[0] + JobConstants.V2_PROXY_PREFIX_URL + parameters[1] + JobConstants.V2_APP_DETAIL_URL + "?" + JobConstants.ANONYMOUS_PARAMETER;
+		return rmBaseUrl + JobConstants.V2_PROXY_PREFIX_URL + appID + JobConstants.V2_APP_DETAIL_URL + "?" + JobConstants.ANONYMOUS_PARAMETER;
 	}
 }

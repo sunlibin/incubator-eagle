@@ -22,6 +22,6 @@ import org.apache.eagle.jobrunning.common.JobConstants;
 
 public interface ResourceFetcher {
 
-	List<Object> getResource(JobConstants.ResourceType resoureType, Object... parameter) throws Exception;
+	List<Object> getResource(String resourceType, String resourceId) throws Exception;
 
 }

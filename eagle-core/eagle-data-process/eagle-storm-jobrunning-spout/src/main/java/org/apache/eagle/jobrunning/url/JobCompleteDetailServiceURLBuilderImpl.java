@@ -20,12 +20,23 @@ import org.apache.eagle.jobrunning.common.JobConstants;
 import org.apache.eagle.jobrunning.util.JobUtils;
 
 public class JobCompleteDetailServiceURLBuilderImpl implements ServiceURLBuilder {
-	
-	public String build(String ... parameters) {
-		// parameters[0] = baseUrl, parameters[1] = jobID		
+
+	private String rmBaseUrl;
+	private String jobID;
+
+	public JobCompleteDetailServiceURLBuilderImpl RMBaseUrl(String rmBaseUrl) {
+		this.rmBaseUrl = rmBaseUrl;
+		return this;
+	}
+
+	public JobCompleteDetailServiceURLBuilderImpl JobID(String jobID) {
+		this.jobID = jobID;
+		return this;
+	}
+
+	public String build() {
 		// {baseUrl}/ws/v1/cluster/apps/job_xxxxxxxxxxxxx_xxxxx?anonymous=true
-		return parameters[0] + JobConstants.V2_COMPLETE_APPS_URL
-			 + JobUtils.getAppIDByJobID(parameters[1])
-			 + "?" + JobConstants.ANONYMOUS_PARAMETER;
+		return rmBaseUrl + JobConstants.V2_COMPLETE_APPS_URL + JobUtils.getAppIDByJobID(jobID)
+			             + "?" + JobConstants.ANONYMOUS_PARAMETER;
 	}
 }

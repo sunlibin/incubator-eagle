@@ -42,14 +42,14 @@ public class DefaultRunningJobInputStreamCallback implements RunningJobCallback{
 	public void onJobRunningInformation(JobContext context, ResourceType type, List<Object> objects) {
 		String jobId = context.jobId;
 		LOG.info(jobId + " information fetched , type: " + type);
-		if (type.equals(ResourceType.JOB_CONFIGURATION)) {
+		if (type.equals(ResourceType.MR_JOB_CONFIGURATION)) {
 			@SuppressWarnings("unchecked")
 			Map<String, String> config = (Map<String, String>) objects.get(0);
 			// the fist field is fixed as messageId
 			RunningJobMessageId messageId = new RunningJobMessageId(jobId, type, context.fetchedTime);
 			eagleCollector.collect(new ValuesArray(messageId, context.user, jobId, type, config));
 		}
-		else if (type.equals(ResourceType.JOB_RUNNING_INFO) || type.equals(ResourceType.JOB_COMPLETE_INFO)) {
+		else if (type.equals(ResourceType.MR_JOB_RUNNING_INFO) || type.equals(ResourceType.MR_JOB_COMPLETE_INFO)) {
 			// Here timestamp is meaningless, set to null
 			RunningJobMessageId messageId = new RunningJobMessageId(jobId, type, null);
 			eagleCollector.collect(new ValuesArray(messageId, context.user, jobId, type, objects));

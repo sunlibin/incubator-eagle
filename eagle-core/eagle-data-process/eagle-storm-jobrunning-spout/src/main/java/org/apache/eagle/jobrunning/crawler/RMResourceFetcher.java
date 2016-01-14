@@ -32,9 +32,10 @@ import org.apache.eagle.jobrunning.config.RunningJobCrawlConfig;
 import org.apache.eagle.jobrunning.counter.parser.JobCountersParser;
 import org.apache.eagle.jobrunning.counter.parser.JobCountersParserImpl;
 import org.apache.eagle.jobrunning.ha.HAURLSelector;
-import org.apache.eagle.jobrunning.ha.HAURLSelectorImpl;
+import org.apache.eagle.jobrunning.ha.ResourceManagerHAURLSelectorImpl;
 import org.apache.eagle.jobrunning.job.conf.JobConfParser;
 import org.apache.eagle.jobrunning.job.conf.JobConfParserImpl;
+import org.apache.eagle.jobrunning.url.*;
 import org.apache.eagle.jobrunning.util.InputStreamUtils;
 import org.apache.eagle.jobrunning.util.JobUtils;
 import org.apache.eagle.jobrunning.util.URLConnectionUtils;
@@ -51,33 +52,16 @@ import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.eagle.jobrunning.url.JobCompleteCounterServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.JobCompleteDetailServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.JobCompletedConfigServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.JobCountersServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.JobDetailServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.JobListServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.JobRunningConfigServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.JobStatusServiceURLBuilderImpl;
-import org.apache.eagle.jobrunning.url.ServiceURLBuilder;
 import org.apache.eagle.jobrunning.yarn.model.AppInfo;
 import org.apache.eagle.jobrunning.yarn.model.AppsWrapper;
 import org.apache.eagle.jobrunning.yarn.model.JobDetailInfo;
+import org.apache.eagle.jobrunning.common.JobConstants.ResourceType;
 
 public class RMResourceFetcher implements ResourceFetcher{
 	
 	private static final Logger LOG = LoggerFactory.getLogger(RMResourceFetcher.class);
 	private final HAURLSelector selector;
 	private final String historyBaseUrl;
-	private final ServiceURLBuilder jobListServiceURLBuilder;
-	private final ServiceURLBuilder jobDetailServiceURLBuilder;
-	private final ServiceURLBuilder jobCounterServiceURLBuilder;
-	private final ServiceURLBuilder jobRunningConfigServiceURLBuilder;
-	private final ServiceURLBuilder jobCompleteDetailServiceURLBuilder;
-	private final ServiceURLBuilder jobCompleteCounterServiceURLBuilder;
-	private final ServiceURLBuilder jobCompletedConfigServiceURLBuilder;
-	private final ServiceURLBuilder jobStatusServiceURLBuilder;
-		
 	private static final int CONNECTION_TIMEOUT = 10000;
 	private static final int READ_TIMEOUT = 10000;
 	private static final String XML_HTTP_HEADER = "Accept";
@@ -90,21 +74,16 @@ public class RMResourceFetcher implements ResourceFetcher{
 	}
 	
 	public RMResourceFetcher(RunningJobCrawlConfig.RunningJobEndpointConfig config) {
-		this.jobListServiceURLBuilder = new JobListServiceURLBuilderImpl();
-		this.jobDetailServiceURLBuilder = new JobDetailServiceURLBuilderImpl();
-		this.jobCounterServiceURLBuilder = new JobCountersServiceURLBuilderImpl();
-		this.jobRunningConfigServiceURLBuilder = new JobRunningConfigServiceURLBuilderImpl();
-		this.jobCompleteDetailServiceURLBuilder = new JobCompleteDetailServiceURLBuilderImpl();
-		this.jobCompleteCounterServiceURLBuilder = new JobCompleteCounterServiceURLBuilderImpl();
-		this.jobCompletedConfigServiceURLBuilder = new JobCompletedConfigServiceURLBuilderImpl();
-		this.jobStatusServiceURLBuilder = new JobStatusServiceURLBuilderImpl();
-
-		this.selector = new HAURLSelectorImpl(config.RMBasePaths, jobListServiceURLBuilder, JobConstants.CompressionType.GZIP);
+		this.selector = new ResourceManagerHAURLSelectorImpl(config.RMBasePaths, JobConstants.CompressionType.GZIP);
 		this.historyBaseUrl = config.HSBasePath;
 	}
 	
 	private void checkUrl() throws IOException {
-		if (!selector.checkUrl(jobListServiceURLBuilder.build(selector.getSelectedUrl(), JobConstants.JobState.RUNNING.name()))) {
+		JobListServiceURLBuilderImpl jobListServiceURLBuilder = new JobListServiceURLBuilderImpl();
+		String url = jobListServiceURLBuilder.RMBaseUrl(selector.getSelectedUrl())
+				     	                     .JobState(JobConstants.JobState.RUNNING.name())
+										     .build();
+		if (!selector.checkUrl(url)) {
 			selector.reSelectUrl();
 		}
 	}
@@ -114,9 +93,12 @@ public class RMResourceFetcher implements ResourceFetcher{
 		InputStream is = null;
 		try {
 			checkUrl();
-			final String urlString = jobListServiceURLBuilder.build(selector.getSelectedUrl(), state);
-			LOG.info("Going to call yarn api to fetch running job list: " + urlString);
-			is = InputStreamUtils.getInputStream(urlString, JobConstants.CompressionType.GZIP);
+			JobListServiceURLBuilderImpl jobListServiceURLBuilder = new JobListServiceURLBuilderImpl();
+			String url = jobListServiceURLBuilder.RMBaseUrl(selector.getSelectedUrl())
+					.JobState(state)
+					.build();
+			LOG.info("Going to call yarn api to fetch running job list: " + url);
+			is = InputStreamUtils.getInputStream(url, JobConstants.CompressionType.GZIP);
 			final AppsWrapper appWrapper = OBJ_MAPPER.readValue(is, AppsWrapper.class);
 			if (appWrapper != null && appWrapper.getApps() != null
 					&& appWrapper.getApps().getApp() != null) {
@@ -134,7 +116,10 @@ public class RMResourceFetcher implements ResourceFetcher{
 		InputStream is = null;
 		InputStream is2 = null;
 		try {
-			final String urlString = jobDetailServiceURLBuilder.build(selector.getSelectedUrl(), appID);
+			JobDetailServiceURLBuilderImpl jobDetailServiceURLBuilder = new JobDetailServiceURLBuilderImpl();
+			String urlString = jobDetailServiceURLBuilder.RMBaseUrl(selector.getSelectedUrl())
+														 .AppID(appID)
+														 .build();
 			LOG.info("Going to fetch job detail information for " + appID + " , url: " + urlString);
 			try {
 				is = InputStreamUtils.getInputStream(urlString, JobConstants.CompressionType.GZIP);
@@ -150,7 +135,11 @@ public class RMResourceFetcher implements ResourceFetcher{
 				&& jobWrapper.getJobs().getJob().size() > 0) {
 				jobDetail = jobWrapper.getJobs().getJob().get(0);
 			}
-			final String urlString2 = jobCounterServiceURLBuilder.build(selector.getSelectedUrl(), appID);
+
+			JobCountersServiceURLBuilderImpl jobCounterServiceURLBuilder = new JobCountersServiceURLBuilderImpl();
+			String urlString2 = jobCounterServiceURLBuilder.RMBaseUrl(selector.getSelectedUrl())
+														   .AppID(appID)
+														   .build();
 			LOG.info("Going to fetch job counters for application " + appID + " , url: " + urlString2);
 			is2 = InputStreamUtils.getInputStream(urlString2, JobConstants.CompressionType.GZIP);
 			final JobCountersWrapper jobCounterWrapper = OBJ_MAPPER.readValue(is2,JobCountersWrapper.class);
@@ -169,12 +158,18 @@ public class RMResourceFetcher implements ResourceFetcher{
 		try {
 			checkUrl();
 			String jobID = JobUtils.getJobIDByAppID(appId);
-			String urlString = jobCompleteDetailServiceURLBuilder.build(selector.getSelectedUrl(), jobID);
+			JobCompleteDetailServiceURLBuilderImpl jobCompleteDetailServiceURLBuilder = new JobCompleteDetailServiceURLBuilderImpl();
+			String urlString = jobCompleteDetailServiceURLBuilder.RMBaseUrl(selector.getSelectedUrl())
+															     .JobID(jobID)
+																 .build();
 			LOG.info("Going to fetch job completed information for " + jobID + " , url: " + urlString);
 			is = InputStreamUtils.getInputStream(urlString, JobConstants.CompressionType.GZIP);
 			final JobCompleteWrapper jobWrapper = OBJ_MAPPER.readValue(is, JobCompleteWrapper.class);
-			
-			String urlString2 = jobCompleteCounterServiceURLBuilder.build(historyBaseUrl, jobID);
+
+			JobCompleteCounterServiceURLBuilderImpl jobCompleteCounterServiceURLBuilder = new JobCompleteCounterServiceURLBuilderImpl();
+			String urlString2 = jobCompleteCounterServiceURLBuilder.HistoryBaseUrl(historyBaseUrl)
+																  .JobID(jobID)
+																  .build();
 			LOG.info("Going to fetch job completed counters for " + jobID + " , url: " + urlString2);
 			is2 = InputStreamUtils.getInputStream(urlString2, JobConstants.CompressionType.NONE, (int) (2 * DateUtils.MILLIS_PER_MINUTE));
 			final Document doc = Jsoup.parse(is2, StandardCharsets.UTF_8.name(), urlString2);
@@ -193,7 +188,10 @@ public class RMResourceFetcher implements ResourceFetcher{
 		try {
 			checkUrl();
 			String jobID = JobUtils.getJobIDByAppID(appID);
-			String urlString = jobRunningConfigServiceURLBuilder.build(selector.getSelectedUrl(), jobID);
+			JobRunningConfigServiceURLBuilderImpl jobRunningConfigServiceURLBuilder = new JobRunningConfigServiceURLBuilderImpl();
+			String urlString = jobRunningConfigServiceURLBuilder.RMBaseUrl(selector.getSelectedUrl())
+																.JobID(jobID)
+																.build();
 			LOG.info("Going to fetch job completed information for " + jobID + " , url: " + urlString);
 			final URLConnection connection = URLConnectionUtils.getConnection(urlString);
 			connection.setRequestProperty(XML_HTTP_HEADER, XML_FORMAT);
@@ -211,7 +209,11 @@ public class RMResourceFetcher implements ResourceFetcher{
 	private List<Object> doFetchCompletedJobConfiguration(String appID) throws Exception {
 		InputStream is = null;
 		try {
-			String urlString = jobCompletedConfigServiceURLBuilder.build(historyBaseUrl, JobUtils.getJobIDByAppID(appID));
+			JobCompletedConfigServiceURLBuilderImpl jobCompletedConfigServiceURLBuilder = new JobCompletedConfigServiceURLBuilderImpl();
+			String urlString = jobCompletedConfigServiceURLBuilder.HistoryBaseUrl(historyBaseUrl)
+																.JobID(JobUtils.getJobIDByAppID(appID))
+																.build();
+
 			is = InputStreamUtils.getInputStream(urlString, JobConstants.CompressionType.NONE);
 			final Document doc = Jsoup.parse(is, "UTF-8", urlString);
 			JobConfParser parser = new JobConfParserImpl();
@@ -227,7 +229,10 @@ public class RMResourceFetcher implements ResourceFetcher{
 		InputStream is = null;
 		try {
 			checkUrl();
-			final String urlString = jobStatusServiceURLBuilder.build(selector.getSelectedUrl(), appID);
+			JobStatusServiceURLBuilderImpl jobStatusServiceURLBuilder = new JobStatusServiceURLBuilderImpl();
+			final String urlString = jobStatusServiceURLBuilder.RMBaseUrl(selector.getSelectedUrl())
+					                                           .AppID(appID)
+															   .build();
 			LOG.info("Going to call yarn api to fetch job status: " + urlString);
 			is = InputStreamUtils.getInputStream(urlString, JobConstants.CompressionType.GZIP);
 			final AppWrapper appWrapper = OBJ_MAPPER.readValue(is, AppWrapper.class);
@@ -247,26 +252,20 @@ public class RMResourceFetcher implements ResourceFetcher{
 			if (is != null) { try {is.close();} catch (Exception e){}  }
 		}
 	}
-	
-	public List<Object> getResource(JobConstants.ResourceType resoureType, Object... parameter) throws Exception{
-		switch(resoureType) {
-			case JOB_LIST:
-				return doFetchApplicationsList((String)parameter[0]);
-			case JOB_RUNNING_INFO:
-				//parameter[0]= appId
-				return doFetchRunningJobInfo((String)parameter[0]);
-			case JOB_COMPLETE_INFO:
-				//parameter[0]= appId
-				return doFetchCompleteJobInfo((String)parameter[0]);
-			case JOB_CONFIGURATION:
-				//parameter[0]= appId
-				boolean isRunning = checkIfJobIsRunning((String)parameter[0]);
-				if (isRunning)
-					return doFetchRunningJobConfiguration((String)parameter[0]);
-				else
-					return doFetchCompletedJobConfiguration((String)parameter[0]); 
-			default:
-				throw new Exception("Not support ressourceType :" + resoureType);
-		}
-	}
+
+    public List<Object> getResource(String resourceType, String resourceId) throws Exception{
+	    if (resourceType.equals(ResourceType.MR_JOB_LIST.name())) {
+			return doFetchApplicationsList(resourceId);
+		} else if (resourceType.equals(ResourceType.MR_JOB_RUNNING_INFO.name())){
+			return doFetchRunningJobInfo(resourceId);
+	    } else if (resourceType.equals(ResourceType.MR_JOB_COMPLETE_INFO.name())){
+			return doFetchCompleteJobInfo(resourceId);
+		} else if (resourceType.equals(ResourceType.MR_JOB_CONFIGURATION.name())) {
+			boolean isRunning = checkIfJobIsRunning(resourceId);
+			if (isRunning)
+				return doFetchRunningJobConfiguration(resourceId);
+			else
+				return doFetchCompletedJobConfiguration(resourceId);
+		} else throw new Exception("Not supported resourceType :" + resourceType);
+    }
 }
